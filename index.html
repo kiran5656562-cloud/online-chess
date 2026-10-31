@@ -1,82 +1,547 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Online Chess — Play a Friend</title>
 <style>
 :root{--bg:#101820;--panel:#1b2836;--text:#f4f7fb;--muted:#aebdca;--accent:#64d8cb;--light:#f0d9b5;--dark:#b58863}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#101820,#182b3a);color:var(--text);font:16px system-ui,Arial,sans-serif;min-height:100vh}
-main{max-width:980px;margin:auto;padding:18px}.brand{display:flex;align-items:center;gap:12px;margin-bottom:16px}.logo{font-size:36px}.brand h1{font-size:clamp(22px,4vw,32px);margin:0}.brand p{margin:2px 0 0;color:var(--muted);font-size:14px}
-.layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:18px}.card{background:#1b2836;border:1px solid #334656;border-radius:18px;padding:16px;box-shadow:0 12px 35px #0002}
-.board-wrap{width:100%;max-width:620px;margin:auto}.board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));width:100%;aspect-ratio:1/1;overflow:hidden;border-radius:8px;border:2px solid #607080;touch-action:manipulation}.sq{min-width:0;width:100%;overflow:hidden;aspect-ratio:1;border:0;padding:0;display:flex;align-items:center;justify-content:center;position:relative;font-size:clamp(24px,5vw,40px);cursor:pointer;color:#141414}.sq.light{background:var(--light)}.sq.dark{background:var(--dark)}.sq.whitepiece{color:#fffdf4;text-shadow:-1px -1px 1px #222,1px 1px 2px #222}.sq.blackpiece{color:#171717;text-shadow:0 1px #eee}.sq.selected{box-shadow:inset 0 0 0 5px #ffe45c}.sq.target:after{content:"";width:22%;height:22%;border-radius:50%;background:#176b46a8;position:absolute}.sq.capture:after{content:"";position:absolute;inset:4px;border:4px solid #176b46a8;border-radius:50%}.coord{position:absolute;font-size:10px;left:4px;top:2px;color:#27333d;opacity:.8}.status{padding:11px 12px;border-radius:10px;background:#10202b;margin-bottom:12px;font-weight:650}.hint{color:var(--muted);font-size:13px;line-height:1.5}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row>*{flex:1}.section{margin-top:15px;padding-top:14px;border-top:1px solid #334656}button,input{font:inherit}button{border:0;border-radius:10px;padding:11px 13px;background:var(--accent);color:#102027;font-weight:700;cursor:pointer}button.secondary{background:#2b4050;color:var(--text);border:1px solid #405666}button:disabled{opacity:.45;cursor:not-allowed}input{width:100%;padding:11px;border:1px solid #405666;border-radius:10px;background:#0f1b25;color:var(--text);margin:6px 0 8px}label{font-size:13px;color:var(--muted)}h2{font-size:18px;margin:0 0 10px}.room-code{font-size:22px;letter-spacing:3px;font-weight:800;color:var(--accent);overflow-wrap:anywhere}.moves{max-height:160px;overflow:auto;color:var(--muted);font-size:14px;line-height:1.8}.moves span{display:inline-block;margin-right:9px}.notice{padding:10px;background:#263b4b;border-radius:10px;font-size:13px;line-height:1.45;margin-top:12px}.pill{display:inline-block;padding:4px 8px;border-radius:99px;background:#263b4b;color:#cde9e6;font-size:12px;margin-bottom:8px}.promo{display:flex;gap:6px;margin:10px 0}.promo button{font-size:22px;flex:1;padding:8px}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(145deg,#101820,#182b3a);color:var(--text);font:16px system-ui,Arial,sans-serif;min-height:100vh}
+main{max-width:980px;margin:auto;padding:18px}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.logo{font-size:36px}
+.brand h1{font-size:clamp(22px,4vw,32px);margin:0}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:18px}
+.card{background:#1b2836;border:1px solid #334656;border-radius:18px;padding:16px;box-shadow:0 12px 35px #0002}
+.board-wrap{width:100%;max-width:620px;margin:auto}
+.board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));width:100%;aspect-ratio:1/1;overflow:hidden;border-radius:8px;border:2px solid #607080;touch-action:manipulation}
+.sq{min-width:0;width:100%;overflow:hidden;aspect-ratio:1;border:0;padding:0;display:flex;align-items:center;justify-content:center;position:relative;font-size:clamp(24px,5vw,40px);cursor:pointer;color:#141414}
+.sq.light{background:var(--light)}
+.sq.dark{background:var(--dark)}
+.sq.whitepiece{color:#fffdf4;text-shadow:-1px -1px 1px #222,1px 1px 2px #222}
+.sq.blackpiece{color:#171717;text-shadow:0 1px #eee}
+.sq.selected{box-shadow:inset 0 0 0 5px #ffe45c}
+.sq.target:after{content:"";width:22%;height:22%;border-radius:50%;background:#176b46a8;position:absolute}
+.sq.capture:after{content:"";position:absolute;inset:4px;border:4px solid #176b46a8;border-radius:50%}
+.coord{position:absolute;font-size:10px;left:4px;top:2px;color:#27333d;opacity:.8}
+.status{padding:11px 12px;border-radius:10px;background:#10202b;margin-bottom:12px;font-weight:650}
+.hint{color:var(--muted);font-size:13px;line-height:1.5}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row>*{flex:1}
+.section{margin-top:15px;padding-top:14px;border-top:1px solid #334656}
+button,input{font:inherit}
+button{border:0;border-radius:10px;padding:11px 13px;background:var(--accent);color:#102027;font-weight:700;cursor:pointer}
+button.secondary{background:#2b4050;color:var(--text);border:1px solid #405666}
+button:disabled{opacity:.45;cursor:not-allowed}
+input{width:100%;padding:11px;border:1px solid #405666;border-radius:10px;background:#0f1b25;color:var(--text);margin:6px 0 8px}
+label{font-size:13px;color:var(--muted)}
+h2{font-size:18px;margin:0 0 10px}
+.room-code{font-size:22px;letter-spacing:3px;font-weight:800;color:var(--accent);overflow-wrap:anywhere}
+.moves{max-height:160px;overflow:auto;color:var(--muted);font-size:14px;line-height:1.8}
+.moves span{display:inline-block;margin-right:9px}
+.notice{padding:10px;background:#263b4b;border-radius:10px;font-size:13px;line-height:1.45;margin-top:12px}
+.pill{display:inline-block;padding:4px 8px;border-radius:99px;background:#263b4b;color:#cde9e6;font-size:12px;margin-bottom:8px}
+.promo{display:flex;gap:6px;margin:10px 0}
+.promo button{font-size:22px;flex:1;padding:8px}
 @media(max-width:740px){main{padding:12px}.layout{grid-template-columns:1fr}.card{padding:12px}.board-card{padding:10px}.sq{font-size:clamp(22px,8vw,42px)}}
 </style>
 </head>
-<body><main>
-<header class="brand"><div class="logo">♞</div><div><h1>Online Chess</h1><p>Private games with friends · free to try</p></div></header>
+<body>
+<main>
+<header class="brand">
+<div class="logo">♞</div>
+<div>
+<h1>Online Chess</h1>
+<p>Private games with friends · free to try</p>
+</div>
+</header>
+
 <div class="layout">
 <section class="card board-card">
 <div class="pill" id="gamePill">Local demo</div>
 <div class="status" id="status">White to move</div>
-<div class="board-wrap"><div class="board" id="board" aria-label="Chess board"></div></div>
+<div class="board-wrap">
+<div class="board" id="board" aria-label="Chess board"></div>
+</div>
 <div id="promotion" class="promo" hidden></div>
-<div class="row" style="margin-top:12px"><button class="secondary" id="undo">↶ Back</button><button class="secondary" id="flip">⇅ Flip board</button><button class="secondary" id="reset">Restart</button></div>
-<div class="section"><h2>Moves</h2><div class="moves" id="moves">No moves yet.</div></div>
+<div class="row" style="margin-top:12px">
+<button class="secondary" id="undo">↶ Back</button>
+<button class="secondary" id="flip">⇅ Flip board</button>
+<button class="secondary" id="reset">Restart</button>
+</div>
+<div class="section">
+<h2>Moves</h2>
+<div class="moves" id="moves">No moves yet.</div>
+</div>
 <p class="hint">Online rooms synchronize moves through Firebase. Undo is available only in local games.</p>
 </section>
+
 <aside class="card">
 <h2>Play a friend online</h2>
 <p class="hint">Create a private room and share its link or code. Create a room and share its code. Your friend can join from another device.</p>
 <div class="section" style="border:0;padding-top:0;margin-top:8px">
-<label for="name">Your display name</label><input id="name" maxlength="24" placeholder="e.g. Alex">
-<div class="row"><button id="create">Create room</button><button id="share" class="secondary" disabled>Share link</button></div>
-<div style="margin-top:12px"><label for="roomCodeInput">Join with room code</label><input id="roomCodeInput" maxlength="8" placeholder="Enter code (e.g. A7K2PQ)"><button id="join" class="secondary" style="width:100%">Join room</button></div>
-<div class="section"><label>Your room code</label><div class="room-code" id="roomCode">------</div><p class="hint" id="roomInfo">No room created yet.</p></div>
+<label for="name">Your display name</label>
+<input id="name" maxlength="24" placeholder="e.g. Alex">
+<div class="row">
+<button id="create">Create room</button>
+<button id="share" class="secondary" disabled>Share link</button>
 </div>
-<div class="notice" id="setupNotice"><strong>Firebase setup included:</strong> This file connects to your online-chess-e5fd1 project using Anonymous Authentication and Realtime Database. If connection fails, check your internet connection and Firebase settings.</div>
-<div class="section"><h2>Firebase connection</h2>
+<div style="margin-top:12px">
+<label for="roomCodeInput">Join with room code</label>
+<input id="roomCodeInput" maxlength="8" placeholder="Enter code (e.g. A7K2PQ)">
+<button id="join" class="secondary" style="width:100%">Join room</button>
+</div>
+<div class="section">
+<label>Your room code</label>
+<div class="room-code" id="roomCode">------</div>
+<p class="hint" id="roomInfo">No room created yet.</p>
+</div>
+</div>
+<div class="notice" id="setupNotice">
+<strong>Firebase setup included:</strong>
+This file connects to your online-chess-e5fd1 project using Anonymous Authentication and Realtime Database. If connection fails, check your internet connection and Firebase settings.
+</div>
+<div class="section">
+<h2>Firebase connection</h2>
 <p class="hint">Firebase configuration and anonymous sign-in are already included in this file. Create a room, share its code, and your friend can join from another device.</p>
 </div>
 </aside>
 </div>
+
 <p class="hint" style="text-align:center;margin:18px 0 4px">Made for friendly matches ♟️</p>
 </main>
+
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+
 <script>
 (() => {
+
 const GLYPH={K:"♔",Q:"♕",R:"♖",B:"♗",N:"♘",P:"♙",k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟"};
 const START="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 const dirs={n:[-33,-31,-18,-14,14,18,31,33],b:[-17,-15,15,17],r:[-16,-1,1,16],k:[-17,-16,-15,-1,1,15,16,17]};
 const on=i=>i>=0&&i<128&&!(i&0x88), side=p=>!p||p==="."?0:p===p.toUpperCase()?1:-1;
 const sq=i=>"abcdefgh"[i&7]+(8-(i>>4)), idx=s=>(8-Number(s[1]))*16+"abcdefgh".indexOf(s[0]);
-function parseFen(fen){const f=fen.split(/\s+/),b=Array(128).fill(".");f[0].split("/").forEach((row,r)=>{let c=0;for(const p of row){if(/[1-8]/.test(p))c+=+p;else b[r*16+c++]=p;}});return {b,t:f[1]==="w"?1:-1,c:(f[2].includes("K")?1:0)|(f[2].includes("Q")?2:0)|(f[2].includes("k")?4:0)|(f[2].includes("q")?8:0),ep:f[3]==="-"?-1:idx(f[3]),half:+f[4],full:+f[5],last:null};}
+
+function parseFen(fen){
+const f=fen.split(/\s+/),b=Array(128).fill(".");
+f[0].split("/").forEach((row,r)=>{
+let c=0;
+for(const p of row){
+if(/[1-8]/.test(p))c+=+p;
+else b[r*16+c++]=p;
+}
+});
+return {b,t:f[1]==="w"?1:-1,c:(f[2].includes("K")?1:0)|(f[2].includes("Q")?2:0)|(f[2].includes("k")?4:0)|(f[2].includes("q")?8:0),ep:f[3]==="-"?-1:idx(f[3]),half:+f[4],full:+f[5],last:null};
+}
+
 let state=parseFen(START),history=[],selected=-1,flipped=false,pending=null,room=null,playerColor=0,db=null,uid=null,gameRef=null,remoteUpdate=false;
-function toFen(s){let rows=[];for(let r=0;r<8;r++){let row="",empty=0;for(let c=0;c<8;c++){const p=s.b[r*16+c];if(p===".")empty++;else{if(empty){row+=empty;empty=0;}row+=p;}}if(empty)row+=empty;rows.push(row);}let cast="";if(s.c&1)cast+="K";if(s.c&2)cast+="Q";if(s.c&4)cast+="k";if(s.c&8)cast+="q";return rows.join("/")+" "+(s.t===1?"w":"b")+" "+(cast||"-")+" "+(s.ep<0?"-":sq(s.ep))+" "+s.half+" "+s.full;}
-function showOnline(message){document.getElementById("roomInfo").textContent=message;}
-function syncFromData(data){if(!data||remoteUpdate)return;remoteUpdate=true;state=parseFen(data.fen||START);history=(data.moves||[]).map((notation)=>({notation,state:null}));selected=-1;pending=null;render();remoteUpdate=false;}
-async function initFirebase(){const firebaseConfig={apiKey:"AIzaSyDCmwaJZ_5Ya9fXHyeEF8oNrZ6ojX3rFrc",authDomain:"online-chess-e5fd1.firebaseapp.com",databaseURL:"https://online-chess-e5fd1-default-rtdb.firebaseio.com",projectId:"online-chess-e5fd1",storageBucket:"online-chess-e5fd1.firebasestorage.app",messagingSenderId:"825239611016",appId:"1:825239611016:web:814ae486807269f5b9213d"};try{if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);await firebase.auth().signInAnonymously();uid=firebase.auth().currentUser.uid;db=firebase.database();document.getElementById("setupNotice").innerHTML="<strong>Firebase connected.</strong> Create a room and share its code with your friend.";showOnline("Connected. Create a room or join a friend's room.");}catch(e){console.error(e);showOnline("Firebase connection failed: "+e.message);}}
-async function watchRoom(code){gameRef=db.ref("games/"+code);gameRef.on("value",snap=>{const d=snap.val();if(!d)return;syncFromData(d);const sideNow=d.hostUid===uid?"White":d.guestUid===uid?"Black":"Spectator";playerColor=sideNow==="White"?1:sideNow==="Black"?-1:0;document.getElementById("gamePill").textContent="Online room "+code+" · "+sideNow;document.getElementById("status").textContent=status()+(playerColor&&state.t!==playerColor?" · Waiting for opponent":" · Your turn");});}
-function attacked(s,target,by){for(let f=0;f<128;f++){if(!on(f)||side(s.b[f])!==by)continue;const p=s.b[f].toLowerCase();if(p==="p"){if(target===f-16*by-1||target===f-16*by+1)return true;continue;}for(const d of (dirs[p]||dirs.k)){for(let t=f+d;on(t);t+=d){if(t===target)return true;if(s.b[t]!=="."||p==="n"||p==="k")break;}}}return false;}
+
+function toFen(s){
+let rows=[];
+for(let r=0;r<8;r++){
+let row="",empty=0;
+for(let c=0;c<8;c++){
+const p=s.b[r*16+c];
+if(p===".")empty++;
+else{
+if(empty){row+=empty;empty=0;}
+row+=p;
+}
+}
+if(empty)row+=empty;
+rows.push(row);
+}
+let cast="";
+if(s.c&1)cast+="K";
+if(s.c&2)cast+="Q";
+if(s.c&4)cast+="k";
+if(s.c&8)cast+="q";
+return rows.join("/")+" "+(s.t===1?"w":"b")+" "+(cast||"-")+" "+(s.ep<0?"-":sq(s.ep))+" "+s.half+" "+s.full;
+}
+
+function showOnline(message){
+document.getElementById("roomInfo").textContent=message;
+}
+
+function syncFromData(data){
+if(!data||remoteUpdate)return;
+remoteUpdate=true;
+state=parseFen(data.fen||START);
+history=(data.moves||[]).map((notation)=>({notation,state:null}));
+selected=-1;
+pending=null;
+render();
+remoteUpdate=false;
+}
+
+async function initFirebase(){
+const firebaseConfig={
+apiKey:"AIzaSyDCmwaJZ_5Ya9fXHyeEF8oNrZ6ojX3rFrc",
+authDomain:"online-chess-e5fd1.firebaseapp.com",
+databaseURL:"https://online-chess-e5fd1-default-rtdb.firebaseio.com",
+projectId:"online-chess-e5fd1",
+storageBucket:"online-chess-e5fd1.firebasestorage.app",
+messagingSenderId:"825239611016",
+appId:"1:825239611016:web:814ae486807269f5b9213d"
+};
+try{
+if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+await firebase.auth().signInAnonymously();
+uid=firebase.auth().currentUser.uid;
+db=firebase.database();
+document.getElementById("setupNotice").innerHTML="<strong>Firebase connected.</strong> Create a room and share its code with your friend.";
+showOnline("Connected. Create a room or join a friend's room.");
+}catch(e){
+console.error(e);
+showOnline("Firebase connection failed: "+e.message);
+}
+}
+
+async function watchRoom(code){
+gameRef=db.ref("games/"+code);
+gameRef.on("value",snap=>{
+const d=snap.val();
+if(!d)return;
+syncFromData(d);
+const sideNow=d.hostUid===uid?"White":d.guestUid===uid?"Black":"Spectator";
+playerColor=sideNow==="White"?1:sideNow==="Black"?-1:0;
+document.getElementById("gamePill").textContent="Online room "+code+" · "+sideNow;
+document.getElementById("status").textContent=status()+(playerColor&&state.t!==playerColor?" · Waiting for opponent":" · Your turn");
+});
+}
+
+function attacked(s,target,by){
+for(let f=0;f<128;f++){
+if(!on(f)||side(s.b[f])!==by)continue;
+const p=s.b[f].toLowerCase();
+if(p==="p"){
+if(target===f-16*by-1||target===f-16*by+1)return true;
+continue;
+}
+for(const d of (dirs[p]||dirs.k)){
+for(let t=f+d;on(t);t+=d){
+if(t===target)return true;
+if(s.b[t]!=="."||p==="n"||p==="k")break;
+}
+}
+}
+return false;
+}
+
 const checked=(s,color=s.t)=>attacked(s,s.b.indexOf(color===1?"K":"k"),-color);
-function apply(s,m){const [f,t,promo,flag]=m,b=s.b.slice(),piece=b[f],captured=b[t];let c=s.c;b[f]=".";b[t]=promo?(s.t===1?promo.toUpperCase():promo):piece;if(flag==="ep")b[t+16*s.t]=".";if(flag==="castle"){const rf=t>f?f+3:f-4,rt=t>f?f+1:f-1;b[rt]=b[rf];b[rf]=".";}if(piece==="K")c&=~3;if(piece==="k")c&=~12;const bits={119:1,112:2,7:4,0:8};if(piece.toLowerCase()==="r")c&=~(bits[f]||0);if(captured.toLowerCase()==="r")c&=~(bits[t]||0);return {b,t:-s.t,c,ep:piece.toLowerCase()==="p"&&Math.abs(t-f)===32?(t+f)/2:-1,half:piece.toLowerCase()==="p"||captured!=="."||flag==="ep"?0:s.half+1,full:s.full+(s.t===-1?1:0),last:{from:f,to:t}};}
-function pseudo(s){const out=[];for(let f=0;f<128;f++){if(!on(f)||side(s.b[f])!==s.t)continue;const p=s.b[f].toLowerCase(),add=(t,flag="")=>{if(s.b[t].toLowerCase()==="k")return;if(p==="p"&&(t>>4===0||t>>4===7))for(const q of ["q","r","b","n"])out.push([f,t,q,flag]);else out.push([f,t,"",flag]);};if(p==="p"){const t=f-16*s.t;if(on(t)&&s.b[t]==="."){add(t);const u=t-16*s.t;if((f>>4)===(s.t===1?6:1)&&s.b[u]===".")add(u);}for(const d of [-1,1]){const u=t+d;if(!on(u))continue;if(side(s.b[u])===-s.t)add(u);else if(u===s.ep&&s.b[u]==="."&&s.b[u+16*s.t]===(s.t===1?"p":"P"))add(u,"ep");}}else{for(const d of (dirs[p]||dirs.k))for(let t=f+d;on(t);t+=d){if(side(s.b[t])===s.t)break;add(t);if(s.b[t]!=="."||p==="n"||p==="k")break;}const home=s.t===1?116:4,rook=s.t===1?"R":"r",bits=s.t===1?[1,2]:[4,8];if(p==="k"&&f===home&&!checked(s)){if((s.c&bits[0])&&s.b[f+3]===rook&&s.b[f+1]==="."&&s.b[f+2]==="."&&!attacked(s,f+1,-s.t)&&!attacked(s,f+2,-s.t))add(f+2,"castle");if((s.c&bits[1])&&s.b[f-4]===rook&&s.b[f-1]==="."&&s.b[f-2]==="."&&s.b[f-3]==="."&&!attacked(s,f-1,-s.t)&&!attacked(s,f-2,-s.t))add(f-2,"castle");}}}return out;}
+
+function apply(s,m){
+const [f,t,promo,flag]=m,b=s.b.slice(),piece=b[f],captured=b[t];
+let c=s.c;
+b[f]=".";
+b[t]=promo?(s.t===1?promo.toUpperCase():promo):piece;
+if(flag==="ep")b[t+16*s.t]=".";
+if(flag==="castle"){
+const rf=t>f?f+3:f-4,rt=t>f?f+1:f-1;
+b[rt]=b[rf];
+b[rf]=".";
+}
+if(piece==="K")c&=~3;
+if(piece==="k")c&=~12;
+const bits={119:1,112:2,7:4,0:8};
+if(piece.toLowerCase()==="r")c&=~(bits[f]||0);
+if(captured.toLowerCase()==="r")c&=~(bits[t]||0);
+return {b,t:-s.t,c,ep:piece.toLowerCase()==="p"&&Math.abs(t-f)===32?(t+f)/2:-1,half:piece.toLowerCase()==="p"||captured!=="."||flag==="ep"?0:s.half+1,full:s.full+(s.t===-1?1:0),last:{from:f,to:t}};
+}
+
+function pseudo(s){
+const out=[];
+for(let f=0;f<128;f++){
+if(!on(f)||side(s.b[f])!==s.t)continue;
+const p=s.b[f].toLowerCase();
+const add=(t,flag="")=>{
+if(s.b[t].toLowerCase()==="k")return;
+if(p==="p"&&(t>>4===0||t>>4===7))
+for(const q of ["q","r","b","n"])out.push([f,t,q,flag]);
+else out.push([f,t,"",flag]);
+};
+if(p==="p"){
+const t=f-16*s.t;
+if(on(t)&&s.b[t]==="."){
+add(t);
+const u=t-16*s.t;
+if((f>>4)===(s.t===1?6:1)&&s.b[u]===".")add(u);
+}
+for(const d of [-1,1]){
+const u=t+d;
+if(!on(u))continue;
+if(side(s.b[u])===-s.t)add(u);
+else if(u===s.ep&&s.b[u]==="."&&s.b[u+16*s.t]===(s.t===1?"p":"P"))add(u,"ep");
+}
+}else{
+for(const d of (dirs[p]||dirs.k))
+for(let t=f+d;on(t);t+=d){
+if(side(s.b[t])===s.t)break;
+add(t);
+if(s.b[t]!=="."||p==="n"||p==="k")break;
+}
+const home=s.t===1?116:4,rook=s.t===1?"R":"r",bits=s.t===1?[1,2]:[4,8];
+if(p==="k"&&f===home&&!checked(s)){
+if((s.c&bits[0])&&s.b[f+3]===rook&&s.b[f+1]==="."&&s.b[f+2]==="."&&!attacked(s,f+1,-s.t)&&!attacked(s,f+2,-s.t))add(f+2,"castle");
+if((s.c&bits[1])&&s.b[f-4]===rook&&s.b[f-1]==="."&&s.b[f-2]==="."&&s.b[f-3]==="."&&!attacked(s,f-1,-s.t)&&!attacked(s,f-2,-s.t))add(f-2,"castle");
+}
+}
+}
+return out;
+}
+
 const legal=s=>pseudo(s).filter(m=>!checked(apply(s,m),s.t));
-function san(s,m){const [f,t,promo,flag]=m,p=s.b[f].toUpperCase(),capture=s.b[t]!=="."||flag==="ep";let x="";if(flag==="castle")x=t>f?"O-O":"O-O-O";else{x=p==="P"?(capture?sq(f)[0]:""):p;x+=(capture?"x":"")+sq(t)+(promo?"="+promo.toUpperCase():"");}const n=apply(s,m);return x+(checked(n)?legal(n).length?"+":"#":"");}
-function status(){const ms=legal(state);if(!ms.length)return checked(state)?"Checkmate — "+(state.t===1?"Black":"White")+" wins!":"Draw — stalemate.";if(state.half>=100)return (state.t===1?"White":"Black")+" to move · 50-move draw may be claimable";return (state.t===1?"White":"Black")+" to move"+(checked(state)?" · Check":"");}
-function render(){const board=document.getElementById("board");board.innerHTML="";const ms=legal(state),targets=selected<0?[]:ms.filter(m=>m[0]===selected).map(m=>m[1]);for(let j=0;j<64;j++){let r=Math.floor(j/8),c=j%8;if(flipped){r=7-r;c=7-c;}const i=r*16+c,p=state.b[i],el=document.createElement("button");el.className="sq "+(((r+c)%2)?"dark":"light")+(side(p)===1?" whitepiece":side(p)===-1?" blackpiece":"")+(selected===i?" selected":"")+(targets.includes(i)?(p==="."?" target":" capture"):"");el.setAttribute("aria-label",sq(i)+(p==="."?" empty": " "+p));el.innerHTML=(c===0?`<span class="coord">${8-r}</span>`:"")+(GLYPH[p]||"");el.addEventListener("click",()=>click(i));board.appendChild(el);}document.getElementById("status").textContent=status();document.getElementById("undo").disabled=history.length===0;document.getElementById("moves").innerHTML=history.length?history.map((h,i)=>`<span>${i%2===0?Math.floor(i/2)+1+".":""} ${h.notation}</span>`).join(""):"No moves yet.";document.getElementById("gamePill").textContent=room?"Room "+room.code+" · local demo":"Local demo";const promo=document.getElementById("promotion");promo.hidden=!pending;if(pending){promo.innerHTML="<span style='align-self:center;font-size:13px'>Promote to:</span>";for(const q of ["q","r","b","n"]){const b=document.createElement("button");b.textContent=GLYPH[state.t===1?q.toUpperCase():q];b.title=({q:"Queen",r:"Rook",b:"Bishop",n:"Knight"})[q];b.onclick=()=>play(pending.find(m=>m[2]===q));promo.appendChild(b);}}}
-function click(i){if(pending)return;if(room&&playerColor&&state.t!==playerColor){showOnline("Wait for your opponent to move.");return;}const ms=legal(state);if(selected>=0){const opts=ms.filter(m=>m[0]===selected&&m[1]===i);if(opts.length){if(opts.length>1){pending=opts;render();return;}play(opts[0]);return;}}if(side(state.b[i])===state.t){selected=i;render();}else{selected=-1;render();}}
-async function play(m){if(room&&gameRef){if(!playerColor||state.t!==playerColor){showOnline("It's not your turn.");return;}const notation=san(state,m),next=apply(state,m);try{await gameRef.transaction(d=>{if(!d||d.fen!==toFen(state))return;d.fen=toFen(next);d.moves=d.moves||[];d.moves.push(notation);return d;});}catch(e){showOnline("Move sync failed: "+e.message);}selected=-1;pending=null;return;}const notation=san(state,m),next=apply(state,m);history.push({state,notation});state=next;selected=-1;pending=null;render();}
-function restart(){state=parseFen(START);history=[];selected=-1;pending=null;render();}
-document.getElementById("undo").onclick=()=>{if(room&&gameRef){showOnline("Undo is disabled in online games so both boards stay synchronized.");return;}if(history.length){state=history.pop().state;selected=-1;pending=null;render();}};document.getElementById("reset").onclick=()=>restart();document.getElementById("flip").onclick=()=>{flipped=!flipped;render();};
-function code(){return Math.random().toString(36).slice(2,8).toUpperCase();}
-document.getElementById("create").onclick=async()=>{if(!db||!uid){alert("Firebase is still connecting. Wait a few seconds and try again.");return;}const c=code();room={code:c,name:document.getElementById("name").value.trim()||"Player 1"};playerColor=1;state=parseFen(START);history=[];await db.ref("games/"+c).set({hostUid:uid,guestUid:null,fen:START,moves:[],createdAt:firebase.database.ServerValue.TIMESTAMP});document.getElementById("roomCode").textContent=c;showOnline("Room created! Share the code with your friend. You are White.");document.getElementById("share").disabled=false;const u=new URL(location.href);u.searchParams.set("room",c);window.history.replaceState(null,"",u);await watchRoom(c);render();};
-document.getElementById("join").onclick=async()=>{if(!db||!uid){alert("Firebase is still connecting. Wait a few seconds and try again.");return;}const c=document.getElementById("roomCodeInput").value.trim().toUpperCase();if(!c){alert("Enter a room code first.");return;}const ref=db.ref("games/"+c);const joinButton=document.getElementById("join");joinButton.disabled=true;showOnline("Checking room...");try{const firstCheck=await ref.once("value");const roomData=firstCheck.val();if(!roomData||!roomData.hostUid){showOnline("Room not found. Check the code.");alert("Room not found. Check the code.");return;}if(roomData.guestUid&&roomData.guestUid!==uid){showOnline("Room is already full.");alert("Room is already full.");return;}const result=await ref.transaction(d=>{if(!d||!d.hostUid||(d.guestUid&&d.guestUid!==uid))return;d.guestUid=uid;return d;});if(!result.committed){showOnline("Room is already full or no longer available.");alert("Room is already full or no longer available. Check the code.");return;}room={code:c,name:document.getElementById("name").value.trim()||"Player 2"};playerColor=-1;document.getElementById("roomCode").textContent=c;showOnline("Joined successfully! You are Black.");document.getElementById("share").disabled=false;await watchRoom(c);}catch(e){console.error("Join room failed:",e);showOnline("Could not join room: "+e.message);alert("Could not join room: "+e.message);}finally{joinButton.disabled=false;}};
-document.getElementById("share").onclick=async()=>{if(!room)return;const u=new URL(location.href);u.searchParams.set("room",room.code);const msg="Join my chess room "+room.code+": "+u.href;try{if(navigator.share)await navigator.share({title:"Join my chess game",text:"Room code: "+room.code,url:u.href});else if(navigator.clipboard){await navigator.clipboard.writeText(msg);alert("Invitation copied!");}else prompt("Copy this invitation:",msg);}catch(e){}};
-const roomFromUrl=new URLSearchParams(location.search).get("room");if(roomFromUrl){document.getElementById("roomCodeInput").value=roomFromUrl;document.getElementById("roomInfo").textContent="Invitation link detected. Enter your name and tap Join room.";}
+
+function san(s,m){
+const [f,t,promo,flag]=m,p=s.b[f].toUpperCase(),capture=s.b[t]!=="."||flag==="ep";
+let x="";
+if(flag==="castle")x=t>f?"O-O":"O-O-O";
+else{
+x=p==="P"?(capture?sq(f)[0]:""):p;
+x+=(capture?"x":"")+sq(t)+(promo?"="+promo.toUpperCase():"");
+}
+const n=apply(s,m);
+return x+(checked(n)?legal(n).length?"+":"#":"");
+}
+
+function status(){
+const ms=legal(state);
+if(!ms.length)return checked(state)?"Checkmate — "+(state.t===1?"Black":"White")+" wins!":"Draw — stalemate.";
+if(state.half>=100)return (state.t===1?"White":"Black")+" to move · 50-move draw may be claimable";
+return (state.t===1?"White":"Black")+" to move"+(checked(state)?" · Check":"");
+}
+
+function render(){
+const board=document.getElementById("board");
+board.innerHTML="";
+const ms=legal(state),targets=selected<0?[]:ms.filter(m=>m[0]===selected).map(m=>m[1]);
+for(let j=0;j<64;j++){
+let r=Math.floor(j/8),c=j%8;
+if(flipped){r=7-r;c=7-c;}
+const i=r*16+c,p=state.b[i],el=document.createElement("button");
+el.className="sq "+(((r+c)%2)?"dark":"light")+(side(p)===1?" whitepiece":side(p)===-1?" blackpiece":"")+(selected===i?" selected":"")+(targets.includes(i)?(p==="."?" target":" capture"):"");
+el.setAttribute("aria-label",sq(i)+(p==="."?" empty": " "+p));
+el.innerHTML=(c===0?`<span class="coord">${8-r}</span>`:"")+(GLYPH[p]||"");
+el.addEventListener("click",()=>click(i));
+board.appendChild(el);
+}
+document.getElementById("status").textContent=status();
+document.getElementById("undo").disabled=history.length===0;
+document.getElementById("moves").innerHTML=history.length?history.map((h,i)=>`<span>${i%2===0?Math.floor(i/2)+1+".":""} ${h.notation}</span>`).join(""):"No moves yet.";
+document.getElementById("gamePill").textContent=room?"Room "+room.code+" · local demo":"Local demo";
+const promo=document.getElementById("promotion");
+promo.hidden=!pending;
+if(pending){
+promo.innerHTML="<span style='align-self:center;font-size:13px'>Promote to:</span>";
+for(const q of ["q","r","b","n"]){
+const b=document.createElement("button");
+b.textContent=GLYPH[state.t===1?q.toUpperCase():q];
+b.title=({q:"Queen",r:"Rook",b:"Bishop",n:"Knight"})[q];
+b.onclick=()=>play(pending.find(m=>m[2]===q));
+promo.appendChild(b);
+}
+}
+}
+
+function click(i){
+if(pending)return;
+if(room&&playerColor&&state.t!==playerColor){
+showOnline("Wait for your opponent to move.");
+return;
+}
+const ms=legal(state);
+if(selected>=0){
+const opts=ms.filter(m=>m[0]===selected&&m[1]===i);
+if(opts.length){
+if(opts.length>1){pending=opts;render();return;}
+play(opts[0]);
+return;
+}
+}
+if(side(state.b[i])===state.t){selected=i;render();}
+else{selected=-1;render();}
+}
+
+async function play(m){
+if(room&&gameRef){
+if(!playerColor||state.t!==playerColor){
+showOnline("It's not your turn.");
+return;
+}
+const notation=san(state,m),next=apply(state,m);
+try{
+await gameRef.transaction(d=>{
+if(!d||d.fen!==toFen(state))return;
+d.fen=toFen(next);
+d.moves=d.moves||[];
+d.moves.push(notation);
+return d;
+});
+}catch(e){showOnline("Move sync failed: "+e.message);}
+selected=-1;
+pending=null;
+return;
+}
+const notation=san(state,m),next=apply(state,m);
+history.push({state,notation});
+state=next;
+selected=-1;
+pending=null;
+render();
+}
+
+function restart(){
+state=parseFen(START);
+history=[];
+selected=-1;
+pending=null;
+render();
+}
+
+document.getElementById("undo").onclick=()=>{
+if(room&&gameRef){
+showOnline("Undo is disabled in online games so both boards stay synchronized.");
+return;
+}
+if(history.length){
+state=history.pop().state;
+selected=-1;
+pending=null;
+render();
+}
+};
+
+document.getElementById("reset").onclick=()=>restart();
+document.getElementById("flip").onclick=()=>{
+flipped=!flipped;
+render();
+};
+
+function code(){
+return Math.random().toString(36).slice(2,8).toUpperCase();
+}
+
+document.getElementById("create").onclick=async()=>{
+if(!db||!uid){
+alert("Firebase is still connecting. Wait a few seconds and try again.");
+return;
+}
+const c=code();
+room={code:c,name:document.getElementById("name").value.trim()||"Player 1"};
+playerColor=1;
+state=parseFen(START);
+history=[];
+await db.ref("games/"+c).set({hostUid:uid,guestUid:null,fen:START,moves:[],createdAt:firebase.database.ServerValue.TIMESTAMP});
+document.getElementById("roomCode").textContent=c;
+showOnline("Room created! Share the code with your friend. You are White.");
+document.getElementById("share").disabled=false;
+const u=new URL(location.href);
+u.searchParams.set("room",c);
+window.history.replaceState(null,"",u);
+await watchRoom(c);
+render();
+};
+
+/* FIXED JOIN CODE */
+document.getElementById("join").onclick=async()=>{
+if(!db||!uid){
+alert("Firebase is still connecting. Wait a few seconds and try again.");
+return;
+}
+
+const c=document.getElementById("roomCodeInput").value.trim().toUpperCase();
+
+if(!c){
+alert("Enter a room code first.");
+return;
+}
+
+const ref=db.ref("games/"+c);
+const joinButton=document.getElementById("join");
+
+joinButton.disabled=true;
+showOnline("Checking room...");
+
+try{
+const firstCheck=await ref.once("value");
+const roomData=firstCheck.val();
+
+if(!roomData||!roomData.hostUid){
+showOnline("Room not found. Check the code.");
+alert("Room not found. Check the code.");
+return;
+}
+
+/* Prevent the room creator from joining their own room */
+if(roomData.hostUid===uid){
+showOnline("You created this room. Ask another player to join.");
+alert("You cannot join your own room. Ask your friend to join instead.");
+return;
+}
+
+if(roomData.guestUid&&roomData.guestUid!==uid){
+showOnline("Room is already full.");
+alert("Room is already full.");
+return;
+}
+
+const result=await ref.transaction(d=>{
+if(!d||!d.hostUid||d.hostUid===uid||(d.guestUid&&d.guestUid!==uid))return;
+d.guestUid=uid;
+return d;
+});
+
+if(!result.committed){
+showOnline("Room is already full or no longer available.");
+alert("Room is already full or no longer available. Check the code.");
+return;
+}
+
+room={code:c,name:document.getElementById("name").value.trim()||"Player 2"};
+playerColor=-1;
+document.getElementById("roomCode").textContent=c;
+showOnline("Joined successfully! You are Black.");
+document.getElementById("share").disabled=false;
+await watchRoom(c);
+
+}catch(e){
+console.error("Join room failed:",e);
+showOnline("Could not join room: "+e.message);
+alert("Could not join room: "+e.message);
+}finally{
+joinButton.disabled=false;
+}
+};
+
+document.getElementById("share").onclick=async()=>{
+if(!room)return;
+const u=new URL(location.href);
+u.searchParams.set("room",room.code);
+const msg="Join my chess room "+room.code+": "+u.href;
+try{
+if(navigator.share)await navigator.share({title:"Join my chess game",text:"Room code: "+room.code,url:u.href});
+else if(navigator.clipboard){
+await navigator.clipboard.writeText(msg);
+alert("Invitation copied!");
+}
+else prompt("Copy this invitation:",msg);
+}catch(e){}
+};
+
+const roomFromUrl=new URLSearchParams(location.search).get("room");
+if(roomFromUrl){
+document.getElementById("roomCodeInput").value=roomFromUrl;
+document.getElementById("roomInfo").textContent="Invitation link detected. Enter your name and tap Join room.";
+}
+
 render();
 initFirebase();
+
 })();
 </script>
-</body></html>
+</body>
+</html>
