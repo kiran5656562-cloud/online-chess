@@ -25,7 +25,7 @@ min-height:100vh
 }
 main{max-width:980px;margin:auto;padding:18px}
 .brand{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-.logo{font-size:36px}
+.logo{font-size:36px;cursor:pointer;user-select:none}
 .brand h1{font-size:clamp(22px,4vw,32px);margin:0}
 .brand p{margin:2px 0 0;color:var(--muted);font-size:14px}
 .layout{
@@ -53,19 +53,11 @@ border:2px solid #607080;
 touch-action:manipulation
 }
 .sq{
-min-width:0;
-width:100%;
-overflow:hidden;
-aspect-ratio:1;
-border:0;
-padding:0;
-display:flex;
-align-items:center;
-justify-content:center;
-position:relative;
+min-width:0;width:100%;overflow:hidden;aspect-ratio:1;
+border:0;padding:0;display:flex;align-items:center;
+justify-content:center;position:relative;
 font-size:clamp(24px,5vw,40px);
-cursor:pointer;
-color:#141414
+cursor:pointer;color:#141414
 }
 .sq.light{background:var(--light)}
 .sq.dark{background:var(--dark)}
@@ -73,19 +65,12 @@ color:#141414
 .sq.blackpiece{color:#171717;text-shadow:0 1px #eee}
 .sq.selected{box-shadow:inset 0 0 0 5px #ffe45c}
 .sq.target:after{
-content:"";
-width:22%;
-height:22%;
-border-radius:50%;
-background:#176b46a8;
-position:absolute
+content:"";width:22%;height:22%;border-radius:50%;
+background:#176b46a8;position:absolute
 }
 .sq.capture:after{
-content:"";
-position:absolute;
-inset:4px;
-border:4px solid #176b46a8;
-border-radius:50%
+content:"";position:absolute;inset:4px;
+border:4px solid #176b46a8;border-radius:50%
 }
 .coord{position:absolute;font-size:10px;left:4px;top:2px;color:#27333d;opacity:.8}
 .status{padding:11px 12px;border-radius:10px;background:#10202b;margin-bottom:12px;font-weight:650}
@@ -95,24 +80,14 @@ border-radius:50%
 .section{margin-top:15px;padding-top:14px;border-top:1px solid #334656}
 button,input{font:inherit}
 button{
-border:0;
-border-radius:10px;
-padding:11px 13px;
-background:var(--accent);
-color:#102027;
-font-weight:700;
-cursor:pointer
+border:0;border-radius:10px;padding:11px 13px;
+background:var(--accent);color:#102027;font-weight:700;cursor:pointer
 }
 button.secondary{background:#2b4050;color:var(--text);border:1px solid #405666}
 button:disabled{opacity:.45;cursor:not-allowed}
 input{
-width:100%;
-padding:11px;
-border:1px solid #405666;
-border-radius:10px;
-background:#0f1b25;
-color:var(--text);
-margin:6px 0 8px
+width:100%;padding:11px;border:1px solid #405666;
+border-radius:10px;background:#0f1b25;color:var(--text);margin:6px 0 8px
 }
 label{font-size:13px;color:var(--muted)}
 h2{font-size:18px;margin:0 0 10px}
@@ -123,6 +98,16 @@ h2{font-size:18px;margin:0 0 10px}
 .pill{display:inline-block;padding:4px 8px;border-radius:99px;background:#263b4b;color:#cde9e6;font-size:12px;margin-bottom:8px}
 .promo{display:flex;gap:6px;margin:10px 0}
 .promo button{font-size:22px;flex:1;padding:8px}
+.chat-box{
+height:190px;overflow-y:auto;background:#10202b;
+padding:10px;border-radius:10px;margin-bottom:10px;
+overflow-wrap:anywhere
+}
+.chat-message{margin-bottom:11px;font-size:14px;line-height:1.4}
+.chat-message strong{color:var(--accent)}
+.chat-time{font-size:10px;color:var(--muted);margin-left:5px}
+#analysisPanel{border:1px solid #4b776f;padding:12px;border-radius:12px}
+#analysisResult{min-height:42px}
 @media(max-width:740px){
 main{padding:12px}
 .layout{grid-template-columns:1fr}
@@ -137,7 +122,7 @@ main{padding:12px}
 <main>
 
 <header class="brand">
-<div class="logo">♞</div>
+<div class="logo" id="secretKey">♞</div>
 <div>
 <h1>Online Chess for swastik</h1>
 <p>Private games with privacy · free for cooking</p>
@@ -168,7 +153,38 @@ main{padding:12px}
 <div class="moves" id="moves">No moves yet.</div>
 </div>
 
-<p class="hint">Online rooms synchronize moves through Firebase. Undo is available only in local games.</p>
+<!-- SECRET ANALYSIS PANEL -->
+<div class="section" id="analysisPanel" hidden>
+<h2>♛ Chess Analysis</h2>
+<p class="hint">
+Stockfish analysis of the current position.
+Suggestions are visible only on this device.
+</p>
+<button id="analyseBtn" style="width:100%">Analyse position</button>
+<div id="analysisResult" class="notice">
+Stockfish has not been loaded yet.
+</div>
+</div>
+
+<!-- ROOM CHAT -->
+<div class="section">
+<h2>💬 Room Chat</h2>
+
+<div class="chat-box" id="chatMessages">
+<span class="hint">Join an online room to start chatting.</span>
+</div>
+
+<input id="chatInput" maxlength="300"
+placeholder="Write a message...">
+
+<button id="sendChat" style="width:100%">
+Send message
+</button>
+</div>
+
+<p class="hint">
+Online rooms synchronize moves through Firebase.
+</p>
 
 </section>
 
@@ -289,39 +305,9 @@ let db=null;
 let uid=null;
 let gameRef=null;
 let remoteUpdate=false;
+let chatRef=null;
 
-function toFen(s){
-let rows=[];
-
-for(let r=0;r<8;r++){
-let row="",empty=0;
-
-for(let c=0;c<8;c++){
-const p=s.b[r*16+c];
-
-if(p===".")empty++;
-else{
-if(empty){row+=empty;empty=0;}
-row+=p;
-}
-}
-
-if(empty)row+=empty;
-rows.push(row);
-}
-
-let cast="";
-if(s.c&1)cast+="K";
-if(s.c&2)cast+="Q";
-if(s.c&4)cast+="k";
-if(s.c&8)cast+="q";
-
-return rows.join("/")+" "+
-(s.t===1?"w":"b")+" "+
-(cast||"-")+" "+
-(s.ep<0?"-":sq(s.ep))+" "+
-s.half+" "+s.full;
-}
+/* FIREBASE */
 
 function showOnline(message){
 document.getElementById("roomInfo").textContent=message;
@@ -378,16 +364,109 @@ showOnline("Connected. Create a room or join a friend's room.");
 
 console.error(e);
 
-document.getElementById("setupNotice").innerHTML=
-"<strong>Firebase connection failed.</strong> "+e.message;
+document.getElementById("setupNotice").textContent=
+"Firebase connection failed: "+e.message;
 
 showOnline("Firebase connection failed: "+e.message);
 }
 }
 
+/* CHAT */
+
+function listenToChat(){
+
+if(!gameRef)return;
+
+if(chatRef){
+chatRef.off();
+}
+
+chatRef=gameRef.child("chat");
+
+const box=document.getElementById("chatMessages");
+box.innerHTML="";
+
+chatRef.limitToLast(60).on("child_added",snap=>{
+
+const message=snap.val();
+
+if(!message)return;
+
+const item=document.createElement("div");
+item.className="chat-message";
+
+const sender=document.createElement("strong");
+sender.textContent=(message.name||"Player")+": ";
+
+const content=document.createElement("span");
+content.textContent=message.text||"";
+
+const time=document.createElement("span");
+time.className="chat-time";
+
+if(message.createdAt){
+time.textContent=new Date(message.createdAt).toLocaleTimeString(
+[],{hour:"2-digit",minute:"2-digit"}
+);
+}
+
+item.appendChild(sender);
+item.appendChild(content);
+item.appendChild(time);
+
+box.appendChild(item);
+box.scrollTop=box.scrollHeight;
+
+});
+}
+
+async function sendChatMessage(){
+
+if(!room||!gameRef){
+alert("Join an online room first.");
+return;
+}
+
+const input=document.getElementById("chatInput");
+const message=input.value.trim();
+
+if(!message)return;
+
+if(!uid){
+alert("Firebase is still connecting.");
+return;
+}
+
+try{
+
+await gameRef.child("chat").push({
+uid:uid,
+name:document.getElementById("name").value.trim()||
+(playerColor===1?"White":"Black"),
+text:message,
+createdAt:firebase.database.ServerValue.TIMESTAMP
+});
+
+input.value="";
+
+}catch(e){
+alert("Message failed: "+e.message);
+}
+}
+
+document.getElementById("sendChat").onclick=sendChatMessage;
+
+document.getElementById("chatInput").addEventListener("keydown",e=>{
+if(e.key==="Enter")sendChatMessage();
+});
+
+/* ROOM WATCHING */
+
 async function watchRoom(code){
 
 gameRef=db.ref("games/"+code);
+
+listenToChat();
 
 gameRef.on("value",snap=>{
 
@@ -415,6 +494,8 @@ status()+
 
 });
 }
+
+/* CHESS RULES */
 
 function attacked(s,target,by){
 
@@ -647,6 +728,8 @@ return (state.t===1?"White":"Black")+
 " to move"+(checked(state)?" · Check":"");
 }
 
+/* BOARD RENDERING */
+
 function render(){
 
 const board=document.getElementById("board");
@@ -775,6 +858,8 @@ render();
 
 }
 
+/* PLAY MOVES */
+
 async function play(m){
 
 if(room&&gameRef){
@@ -828,6 +913,40 @@ pending=null;
 
 render();
 
+}
+
+function toFen(s){
+
+let rows=[];
+
+for(let r=0;r<8;r++){
+let row="",empty=0;
+
+for(let c=0;c<8;c++){
+const p=s.b[r*16+c];
+
+if(p===".")empty++;
+else{
+if(empty){row+=empty;empty=0;}
+row+=p;
+}
+}
+
+if(empty)row+=empty;
+rows.push(row);
+}
+
+let cast="";
+if(s.c&1)cast+="K";
+if(s.c&2)cast+="Q";
+if(s.c&4)cast+="k";
+if(s.c&8)cast+="q";
+
+return rows.join("/")+" "+
+(s.t===1?"w":"b")+" "+
+(cast||"-")+" "+
+(s.ep<0?"-":sq(s.ep))+" "+
+s.half+" "+s.full;
 }
 
 function restart(){
@@ -910,7 +1029,6 @@ document.getElementById("share").disabled=false;
 
 const u=new URL(location.href);
 u.searchParams.set("room",c);
-
 window.history.replaceState(null,"",u);
 
 await watchRoom(c);
@@ -927,7 +1045,7 @@ alert("Could not create room: "+e.message);
 
 };
 
-/* IMPROVED JOIN ROOM SYSTEM */
+/* JOIN ROOM */
 
 document.getElementById("join").onclick=async()=>{
 
@@ -951,46 +1069,26 @@ showOnline("Checking room...");
 
 try{
 
-/* First check whether the room exists */
-
 const check=await ref.once("value");
 const data=check.val();
 
 if(!data||!data.hostUid){
-
 showOnline("Room not found. Check the code.");
 alert("Room not found. Check the code.");
-
 return;
-
 }
-
-/* Prevent joining your own room */
 
 if(data.hostUid===uid){
-
 showOnline("You created this room. Ask another player to join.");
 alert("You cannot join your own room.");
-
 return;
-
 }
-
-/* Check whether another player has joined */
 
 if(data.guestUid&&data.guestUid!==uid){
-
 showOnline("Room is already full.");
 alert("This room is already full.");
-
 return;
-
 }
-
-/*
-Reserve the guest slot separately.
-This avoids rewriting the entire room just to join.
-*/
 
 const guestRef=ref.child("guestUid");
 
@@ -1000,12 +1098,8 @@ if(current===null||current===undefined||current===uid){
 return uid;
 }
 
-/* Abort if another player already occupies the slot */
 return;
-
 });
-
-/* Check the actual result */
 
 if(!result.committed){
 
@@ -1013,38 +1107,24 @@ const latestSnap=await ref.once("value");
 const latest=latestSnap.val();
 
 if(!latest){
-
 showOnline("The room was deleted.");
 alert("This room no longer exists.");
-
 }else if(latest.guestUid&&latest.guestUid!==uid){
-
 showOnline("Room is already full.");
 alert("Another player has already joined this room.");
-
 }else{
-
 showOnline("Firebase did not accept the join request. Check your database permissions.");
 alert("Firebase rejected the join request. Check your Firebase rules and anonymous authentication.");
-
 }
 
 return;
-
 }
-
-/* Confirm that this phone owns the guest slot */
 
 if(result.snapshot.val()!==uid){
-
 showOnline("Could not reserve the player slot.");
 alert("Could not reserve the player slot. Please try another room.");
-
 return;
-
 }
-
-/* Successful join */
 
 room={
 code:c,
@@ -1091,8 +1171,7 @@ if(!room)return;
 const u=new URL(location.href);
 u.searchParams.set("room",room.code);
 
-const msg=
-"Join my chess room "+room.code+": "+u.href;
+const msg="Join my chess room "+room.code+": "+u.href;
 
 try{
 
@@ -1119,7 +1198,7 @@ prompt("Copy this invitation:",msg);
 
 };
 
-/* READ ROOM CODE FROM INVITATION LINK */
+/* READ ROOM CODE FROM LINK */
 
 const roomFromUrl=
 new URLSearchParams(location.search).get("room");
@@ -1133,6 +1212,188 @@ document.getElementById("roomInfo").textContent=
 
 }
 
+/* SECRET KNIGHT x3, QUEEN x2 */
+
+let secretClicks=0;
+let secretTimer=null;
+
+document.getElementById("secretKey").onclick=()=>{
+
+secretClicks++;
+
+clearTimeout(secretTimer);
+
+if(secretClicks===3){
+document.getElementById("secretKey").textContent="♛";
+}
+
+if(secretClicks===5){
+
+document.getElementById("analysisPanel").hidden=false;
+
+document.getElementById("secretKey").textContent="♞";
+
+secretClicks=0;
+
+}
+
+secretTimer=setTimeout(()=>{
+
+secretClicks=0;
+document.getElementById("secretKey").textContent="♞";
+
+},4000);
+
+};
+
+/* STOCKFISH ANALYSIS */
+
+let engineWorker=null;
+let engineReady=false;
+let engineLoading=false;
+let engineWaiting=false;
+
+function loadStockfish(){
+
+if(engineLoading||engineWorker)return;
+
+engineLoading=true;
+
+const engineURL=
+"https://cdn.jsdelivr.net/npm/stockfish@19.0.1/bin/stockfish-19-lite-single.js";
+
+try{
+
+engineWorker=new Worker(engineURL);
+
+engineWorker.onmessage=e=>{
+
+const line=String(e.data);
+
+if(line==="uciok"){
+engineWorker.postMessage("isready");
+}
+
+if(line==="readyok"){
+
+engineReady=true;
+engineLoading=false;
+
+document.getElementById("analysisResult").textContent=
+"Stockfish loaded. Tap Analyse position.";
+
+}
+
+if(line.startsWith("info depth")){
+
+const result=document.getElementById("analysisResult");
+
+const depth=line.match(/depth (\d+)/);
+const cp=line.match(/score cp (-?\d+)/);
+const mate=line.match(/score mate (-?\d+)/);
+
+let detail="";
+
+if(cp){
+detail="Evaluation: "+(Number(cp[1])/100).toFixed(2);
+}
+
+if(mate){
+detail="Mate in "+mate[1];
+}
+
+if(depth){
+result.textContent=
+"Thinking... Depth "+depth[1]+
+(detail?" · "+detail:"");
+}
+
+}
+
+if(line.startsWith("bestmove")){
+
+engineWaiting=false;
+
+const move=line.split(" ")[1];
+
+document.getElementById("analysisResult").textContent=
+!move||move==="0000"?
+"No legal move found.":
+"Suggested move: "+move.slice(0,2)+" → "+move.slice(2,4);
+
+}
+
+};
+
+engineWorker.onerror=e=>{
+
+engineLoading=false;
+engineReady=false;
+
+document.getElementById("analysisResult").textContent=
+"Stockfish failed to load. Check your internet connection.";
+
+console.error(e);
+
+};
+
+engineWorker.postMessage("uci");
+
+}catch(e){
+
+engineLoading=false;
+
+document.getElementById("analysisResult").textContent=
+"Could not start Stockfish: "+e.message;
+
+}
+
+}
+
+document.getElementById("analyseBtn").onclick=()=>{
+
+const result=document.getElementById("analysisResult");
+
+if(!room){
+result.textContent="Join an online room before analysing.";
+return;
+}
+
+if(engineWaiting){
+result.textContent="Analysis is already running.";
+return;
+}
+
+if(!engineWorker){
+
+result.textContent="Loading Stockfish. Please wait...";
+loadStockfish();
+
+return;
+
+}
+
+if(!engineReady){
+
+result.textContent="Stockfish is still loading.";
+return;
+
+}
+
+engineWaiting=true;
+
+result.textContent="Thinking about the position...";
+
+engineWorker.postMessage("position fen "+toFen(state));
+
+const thinkingTime=2000+Math.floor(Math.random()*2500);
+
+engineWorker.postMessage("go movetime "+thinkingTime);
+
+};
+
+/* START */
+
 render();
 initFirebase();
 
@@ -1141,3 +1402,6 @@ initFirebase();
 
 </body>
 </html>
+
+---
+
